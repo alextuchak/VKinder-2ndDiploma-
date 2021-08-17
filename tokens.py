@@ -1,2 +1,2 @@
-token = ''
+token = 'bc434c1b213aaffb62cac324851afc2b91bd942924eb188a0981f7782d634aa3d713ce941a79fb6b43977'
 confirmation_str = 'b3b90c7a'

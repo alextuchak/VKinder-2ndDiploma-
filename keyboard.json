@@ -14,13 +14,6 @@
           "label": "Стоп-бот"
         },
         "color": "negative"
-      }],
-    [{
-      "action": {
-        "type": "text",
-        "label": "translate"
-      },
-      "color": "secondary"
-    }]
+      }]
   ]
 }
