@@ -13,5 +13,6 @@ def data_base(user_id, users_id_for_send):
                   sqlalchemy.Column('UsersIdForSend', sqlalchemy.String(40)),
                   )
     metadata.create_all(engine)
-    return con.execute(links.insert().values(UsersIdForSend=users_id_for_send))
-
+    con.execute(links.insert().values(UsersIdForSend=users_id_for_send))
+    con.close()
+    return

@@ -151,5 +151,5 @@ class vk_api():
     # запишем наш словарь с ссылками на фото в файл json
     def write(self, user_token, user_id):
         ph_dict = self.get_photo(user_token, user_id)
-        with open('data.json', 'w', encoding='utf-8') as f:
+        with open(f'data{user_id}.json', 'w', encoding='utf-8') as f:
             json.dump(ph_dict, f, ensure_ascii=False, indent=4)
