@@ -1,6 +1,6 @@
 import time
 import vk
-from tokens import token
+from tokens import token, user_token
 import os
 from random import randrange
 from datetime import date
@@ -16,6 +16,11 @@ class vk_api():
     def __init__(self, name):
         self.name = name
 
+    def json_reader(self, user_id):
+        with open(f'cache{user_id}.json') as f:
+            fields_dict = json.load(f)
+            return fields_dict
+
     # отправка сообщения с клавиатурой с 2-мя кнопками
     def message_send(self, user_id, message):
         vk_api.api.messages.send(user_id=str(user_id), message=message,
@@ -30,17 +35,16 @@ class vk_api():
                                  keyboard=open(os.path.join(THIS_FOLDER, 'empty_keyboard.json'), "r",
                                                encoding="UTF-8").read())
 
-    # отправляем сообщение с клавиатурой с кнопкой токен
-    def get_token(self, user_id, message):
-        vk_api.api.messages.send(user_id=str(user_id), message=message,
-                                 random_id=randrange(10 ** 7),
-                                 keyboard=open(os.path.join(THIS_FOLDER, 'token_keyboard.json'), "r",
-                                               encoding="UTF-8").read())
-
     def send_photo(self, user_id, message, attachment):
-        vk_api.api.messages.send(user_id=str(user_id), message=message,attachment=attachment,
+        vk_api.api.messages.send(user_id=str(user_id), message=message, attachment=attachment,
                                  random_id=randrange(10 ** 7),
                                  keyboard=open(os.path.join(THIS_FOLDER, 'empty_keyboard.json'), "r",
+                                               encoding="UTF-8").read())
+
+    def user_sex(self, user_id, message):
+        vk_api.api.messages.send(user_id=str(user_id), message=message,
+                                 random_id=randrange(10 ** 7),
+                                 keyboard=open(os.path.join(THIS_FOLDER, 'sex_keyboard.json'), "r",
                                                encoding="UTF-8").read())
 
     # получение инф о пользователе с токеном группы
@@ -49,27 +53,52 @@ class vk_api():
         response = vk_api.api.users.get(user_id=str(user_id), fields=fields, v=5.89)
         return response
 
+    def get_city_id(self, city):
+        try:
+            session = vk.Session(access_token=user_token)
+            api = vk.API(session, v='5.89')
+            response = api.database.getCities(country_id=1, count=1000, q=city)
+            return response['items'][0].get('id')
+        except IndexError:
+            return None
+
     # заполнение словаря парамметров для поиска подходящих пользователей
-    def get_search_fields(self, response):
+    def get_search_fields(self, response, user_id):
         fields_dict = {}
-        if response[0]['sex'] == 1:
+        # проверяем введен ли у пользователя пол
+        if response[0].get('sex') == 0:
+            fields_dict['sex'] = 0
+        elif response[0].get('sex') == 1:
             fields_dict['sex'] = 2
         else:
             fields_dict['sex'] = 1
-        fields_dict['city'] = response[0]['city']['id']
-        fields_dict['age'] = self.calculate_age(response[0]['bdate'])
+        # проверяем введен ли у пользователя город
+        try:
+            fields_dict['city'] = response[0]['city'].get('id')
+        except KeyError:
+            fields_dict['city'] = None
+        # проверяем введен ли у пользователя возраст
+        try:
+            bdate = response[0]['bdate']
+            fields_dict['age'] = self.calculate_age(bdate, user_id)
+        except KeyError:
+            fields_dict['age'] = None
         return fields_dict
 
     # вычисление возраста пользователя
-    def calculate_age(self, bdate):
+    def calculate_age(self, bdate, user_id):
         today = date.today()
         templist = bdate.split('.')
         born = date(int(templist[2]), int(templist[1]), int(templist[0]))
-        return today.year - born.year - ((today.month, today.day) < (born.month, born.day))
+        age = today.year - born.year - ((today.month, today.day) < (born.month, born.day))
+        if age > 50 or age < 10:
+            message = f'Введен неверный возраст. Введите дату вашего рождения в формате dd.mm.yyyy'
+            vk_api.user_sex(user_id, message)
+        return age
 
     # поиск подходящих пользователей
     def users_search(self, user_token, user_id):
-        fields_dict = self.get_search_fields(self.get_user_inf(user_id))
+        fields_dict = self.json_reader(user_id)
         session = vk.Session(access_token=user_token)
         api = vk.API(session, v='5.89')
         fields = 'relation, last_seen'

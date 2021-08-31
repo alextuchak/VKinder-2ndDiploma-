@@ -1,15 +1,17 @@
 from flask import Flask, request, json
 from tokens import confirmation_str
 from vk_api import vk_api
+from add_inf import additional_inf
 import os
-from photo_send import PhotoSend
+
 
 THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
 
 app = Flask(__name__)
 
 vk_api = vk_api('vk_api')
-photo_send = PhotoSend('send')
+add_inf = additional_inf('add_inf')
+
 
 
 @app.route('/')
@@ -42,18 +44,18 @@ def message_checker(data):
                   f'Для прекращения работы нажми кнопку "Стоп-бот"'
         vk_api.message_send(user_id, message)
     elif data['object']['text'] == 'Знакомства':
-        message = f'Хорошо, {user_name}, остался 1 шаг - отправь мне токен-пользователя.'
-        vk_api.good_bye(user_id, message)
-    elif len(data['object']['text']) == 85:
-        user_token = data['object']['text']
-        vk_api.write(user_token, user_id)
-        photo_send.photo_send(user_id)
+        add_inf.dict_create(user_id)
+        add_inf.inf_check(user_id)
+    elif data['object']['text'] == 'Мужской' or data['object']['text'] == 'Женский':
+        sex = data['object']['text']
+        add_inf.add_sex_inf(user_id, sex)
+    elif data['object']['text'].count('.') == 2:
+        bdate = data['object']['text']
+        add_inf.add_age_inf(user_id, bdate)
+    elif vk_api.get_city_id(city=data['object']['text']) is not None:
+        city = data['object']['text']
+        add_inf.add_city_inf(user_id, city)
     else:
         message = f'Привет, {user_name}! Для поиска знакомств нажми кнопку "Знакомства". ' \
                   f'Для прекращения работы нажми кнопку "Стоп-бот"'
         vk_api.message_send(user_id, message)
-
-
-
-
-

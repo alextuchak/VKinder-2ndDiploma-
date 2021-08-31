@@ -1,6 +1,8 @@
 import json
 from vk_api import vk_api
-
+import os
+from data_base import data_base
+THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
 vk = vk_api('vk')
 
 
@@ -41,4 +43,7 @@ class PhotoSend:
                          f'photo{users_id_for_send[i]}_{photo_id_for_send[1 + id]},' \
                          f'photo{users_id_for_send[i]}_{photo_id_for_send[2 + id]},'
             vk.send_photo(user_id, message, attachment)
+            data_base(user_id,users_id_for_send=users_id_for_send[i])
             id += 3
+        os.remove('data.json')
+        os.remove(f'cache{user_id}.json')
